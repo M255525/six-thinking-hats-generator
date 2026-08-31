@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-hat="blue">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六頂思考帽分析產生器 · 換一頂帽子，換一種想事情的方式</title>
+<style>
+  :root{
+    --bg:#eef1f5;
+    --bg-alt:#e5eaf0;
+    --panel:#ffffff;
+    --panel-raised:#f6f8fa;
+    --line:#d7dee6;
+    --line-soft:#e6eaf0;
+    --ink:#1f2937;
+    --ink-dim:#5b6472;
+    --ink-faint:#94a0b0;
+    --red-live:#dc2626;
+    --accent:#2563eb;
+    --accent-soft:rgba(37,99,235,.12);
+    --accent-ink:#1d4ed8;
+    --font-sans:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    --font-mono:ui-monospace,"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --radius:12px;
+  }
+  /* 每頂帽子各自的品牌色：點選帽子時把 --accent 系列換成該帽子的顏色，讓整頁「像換了一頂帽子」 */
+  html[data-hat="white"]{--accent:#64748b;--accent-soft:rgba(100,116,139,.13);--accent-ink:#475569;}
+  html[data-hat="red"]{--accent:#dc2626;--accent-soft:rgba(220,38,38,.10);--accent-ink:#b91c1c;}
+  html[data-hat="black"]{--accent:#111827;--accent-soft:rgba(17,24,39,.08);--accent-ink:#111827;}
+  html[data-hat="yellow"]{--accent:#c88a1f;--accent-soft:rgba(200,138,31,.15);--accent-ink:#92400e;}
+  html[data-hat="green"]{--accent:#15803d;--accent-soft:rgba(21,128,61,.10);--accent-ink:#166534;}
+  html[data-hat="blue"]{--accent:#2563eb;--accent-soft:rgba(37,99,235,.12);--accent-ink:#1d4ed8;}
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.65;min-height:100vh;
+    background-image:radial-gradient(var(--line-soft) 1px, transparent 1px);
+    background-size:24px 24px;
+  }
+  a{color:var(--accent-ink);}
+  ::selection{background:var(--accent);color:#fff;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  h1,h2,h3{font-weight:900;letter-spacing:-.01em;color:var(--ink);}
+
+  .marker{background-image:linear-gradient(180deg, transparent 58%, var(--accent-soft) 58%);padding:0 .06em;transition:background-image .2s;}
+
+  .btn{
+    font-family:var(--font-sans);font-size:13.5px;font-weight:700;
+    background:var(--panel-raised);color:var(--ink);border:1.5px solid var(--line);
+    padding:9px 16px;border-radius:8px;cursor:pointer;transition:.15s;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent-ink);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn.primary:hover{filter:brightness(1.08);box-shadow:0 4px 14px var(--accent-soft);}
+  .btn.ghost{background:transparent;}
+  .btn.danger:hover{border-color:var(--red-live);color:var(--red-live);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn:disabled:hover{border-color:var(--line);color:var(--ink);box-shadow:none;}
+
+  /* ---------- 頂部跑馬燈（沿用工作區共用授權伺服器的公告，與本工具其餘功能無關） ---------- */
+  #marqueeBar{position:fixed;top:0;left:0;right:0;height:30px;background:var(--panel);border-bottom:1px solid var(--line);z-index:2100;overflow:hidden;display:none;align-items:center}
+  #marqueeBar.show{display:flex}
+  #marqueeTrack{display:inline-block;white-space:nowrap;padding-left:100%;font-size:13px;font-weight:700;color:var(--accent-ink);animation:marquee-scroll 30s linear infinite}
+  body.has-marquee{padding-top:30px}
+  body.has-marquee .topbar{top:30px}
+  @keyframes marquee-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  input[type=text], textarea, select, input[type=password]{
+    width:100%;background:var(--panel-raised);color:var(--ink);border:1.5px solid var(--line);
+    border-radius:8px;padding:10px 12px;font-family:var(--font-sans);font-size:14px;
+  }
+  textarea{min-height:84px;resize:vertical;line-height:1.6;}
+  input:focus, textarea:focus, select:focus{border-color:var(--accent);}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;padding:14px 24px;
+    border-bottom:1px solid var(--line-soft);background:var(--panel);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:15.5px;}
+  .topbar nav a{font-size:13px;font-weight:700;color:var(--ink-dim);text-decoration:none;border:1.5px solid var(--line);padding:7px 14px;border-radius:8px;transition:.15s;}
+  .topbar nav a:hover{color:var(--accent-ink);border-color:var(--accent);}
+
+  .hero{padding:46px 24px 34px;text-align:center;border-bottom:1px solid var(--line-soft);background:linear-gradient(180deg, var(--bg-alt), var(--bg));}
+  .hero .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.3em;color:var(--ink-faint);text-transform:uppercase;margin-bottom:14px;}
+  .hero h1{font-size:clamp(24px,4.4vw,38px);margin:0 0 14px;}
+  .hero p.lead{max-width:600px;margin:0 auto 8px;color:var(--ink-dim);font-size:15px;}
+
+  .mode-toggle{display:inline-flex;gap:4px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:4px;margin:22px auto 4px;}
+  .mode-toggle button{font-family:var(--font-sans);font-size:13px;font-weight:700;background:transparent;color:var(--ink-dim);border:none;padding:8px 16px;border-radius:7px;cursor:pointer;transition:.15s;}
+  .mode-toggle button.active{background:var(--accent);color:#fff;}
+
+  .hat-rack{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;max-width:640px;margin:22px auto 0;}
+  .hat-swatch{display:flex;flex-direction:column;align-items:center;gap:5px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px 12px 11px;cursor:pointer;transition:.15s;width:82px;}
+  .hat-swatch:hover{transform:translateY(-2px);border-color:var(--hs-fill);}
+  .hat-swatch.active{border-color:var(--hs-fill);box-shadow:0 0 0 3px var(--hs-soft);}
+  .hat-swatch svg{width:38px;height:24px;}
+  .hat-swatch .hs-name{font-weight:800;font-size:12.5px;}
+  .hat-swatch .hs-role{font-size:9.5px;color:var(--ink-faint);text-align:center;line-height:1.3;}
+  .hat-rack.seq-mode .hat-swatch{opacity:.55;cursor:default;}
+  .hat-rack.seq-mode .hat-swatch:hover{transform:none;border-color:var(--line);}
+  .seq-note{font-size:12px;color:var(--ink-faint);margin-top:12px;font-family:var(--font-mono);}
+
+  main{max-width:820px;margin:0 auto;padding:36px 20px 60px;display:flex;flex-direction:column;gap:20px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 1px 2px rgba(20,30,50,.04);}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .panel-title{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;}
+  .panel-title .badge{
+    width:26px;height:26px;border-radius:8px;background:var(--accent-soft);color:var(--accent-ink);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:800;flex:none;
+  }
+  .panel-hint{font-size:12.5px;color:var(--ink-faint);margin:0 0 16px;}
+
+  .preset-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .preset-row label{font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);white-space:nowrap;}
+  .preset-row select{flex:1;min-width:180px;}
+
+  .field{margin-bottom:0;}
+  .field label{display:block;font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:6px;}
+
+  .output-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .output-box{
+    background:var(--panel-raised);border:1px solid var(--line);border-radius:8px;padding:14px;
+    white-space:pre-wrap;font-family:var(--font-mono);font-size:12.5px;color:var(--ink);min-height:52px;line-height:1.7;margin-top:14px;
+  }
+  .output-box:empty::before{content:'（尚未產生內容）';color:var(--ink-faint);font-family:var(--font-sans);}
+
+  .hat-card{border:1px solid var(--line-soft);border-radius:10px;margin-top:12px;overflow:hidden;border-left:4px solid var(--hc-ink,var(--line));}
+  .hat-card summary{cursor:pointer;list-style:none;padding:11px 14px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;background:var(--panel-raised);}
+  .hat-card summary::-webkit-details-marker{display:none;}
+  .hat-card summary .hc-dot{width:12px;height:12px;border-radius:50%;background:var(--hc-fill,var(--line));flex:none;}
+  .hat-card summary .hc-status{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);font-weight:600;}
+  .hat-card .hc-body{padding:12px 14px 14px;}
+  .hat-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:2px;}
+  .hat-table th,.hat-table td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  .hat-table th{background:var(--panel-raised);font-weight:800;color:var(--ink-dim);}
+  .hat-table-wrap{overflow-x:auto;}
+
+  .ai-panel{border-color:var(--accent-soft);}
+  .ai-panel .panel-title .badge{background:var(--accent-soft);color:var(--accent-ink);}
+  .api-settings{margin-bottom:10px;}
+  .api-settings summary{cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-dim);}
+  .api-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  .api-grid label{grid-column:span 1;font-size:12px;color:var(--ink-faint);display:block;}
+  .api-grid label.full{grid-column:1 / -1;}
+  .api-note{font-size:11.5px;color:var(--ink-faint);margin-top:8px;line-height:1.6;}
+  .ai-report{margin-top:10px;font-size:12.5px;min-height:1.4em;}
+  .ai-report .ok{color:var(--accent-ink);}
+  .ai-report .warn{color:#92400e;}
+  .ai-report .bad{color:var(--red-live);}
+
+  .save-row{display:flex;gap:10px;margin-bottom:14px;}
+  .save-row input{flex:1;}
+  .saved-empty{font-size:12.5px;color:var(--ink-faint);margin:0;}
+  .saved-item{border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;}
+  .saved-item-name{font-weight:700;font-size:13.5px;}
+  .saved-item-meta{font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-family:var(--font-mono);}
+  .saved-item-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--font-mono);font-size:11.5px;background:var(--panel-raised);color:var(--ink-dim);border:1px solid var(--line);padding:5px 10px;border-radius:6px;cursor:pointer;}
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink);}
+
+  footer{max-width:820px;margin:0 auto;padding:0 20px 50px;}
+  .warn-box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;font-size:12.5px;color:var(--ink-dim);}
+  .warn-box strong{color:var(--ink);display:block;margin-bottom:8px;font-size:13px;}
+  .warn-box ul{margin:0;padding-left:18px;}
+  .warn-box li{margin-bottom:5px;}
+  .footer-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-faint);font-family:var(--font-mono);}
+  .footer-meta a{color:var(--ink-dim);}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--ink);border:1px solid var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:3000;}
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
+  @media (max-width:600px){
+    .api-grid{grid-template-columns:1fr;}
+    .hat-rack{gap:8px;}
+    .hat-swatch{width:70px;padding:8px 6px 9px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="marqueeBar"><div id="marqueeTrack"></div></div>
+
+<div class="topbar">
+  <div class="brand">🎩 六頂思考帽分析產生器</div>
+  <nav><a href="manual.html">使用手冊</a></nav>
+</div>
+
+<div class="hero">
+  <div class="eyebrow">SIX THINKING HATS · EDWARD DE BONO</div>
+  <h1>換一頂帽子，<span class="marker">換一種想事情的方式</span></h1>
+  <p class="lead">填入你正在煩惱的問題，選一頂思考帽或依序戴上六頂，逐步產出結構化分析。免金鑰就能組成提示詞自己貼去用，也可以選填你自己的 AI 金鑰直接取得完整分析結果。</p>
+
+  <div class="mode-toggle" id="modeToggle" role="tablist">
+    <button type="button" data-mode="single" class="active">🎯 單一帽</button>
+    <button type="button" data-mode="sequence">🔄 六頂依序</button>
+  </div>
+
+  <div class="hat-rack" id="hatRack"></div>
+  <div class="seq-note" id="seqNote" style="display:none;">依序模式會固定以「白→紅→黑→黃→綠→藍」的順序各自產出一份分析</div>
+</div>
+
+<main>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="badge">①</span>問題主題</div>
+    </div>
+    <p class="panel-hint">用一句話描述你想分析的問題或決策，例如「公司要不要調漲主力產品售價 15%」。</p>
+    <div class="preset-row">
+      <label for="presetSelect">套用範例</label>
+      <select id="presetSelect"><option value="">— 選擇一個情境快速開始 —</option></select>
+      <button class="btn ghost" id="clearBtn" type="button">清空</button>
+    </div>
+    <div class="field">
+      <textarea id="topicInput" maxlength="200" placeholder="輸入你想分析的問題主題……"></textarea>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="badge">②</span>組成提示詞</div>
+    </div>
+    <p class="panel-hint" id="buildHint">純前端組裝，不需要 API 金鑰，可以直接複製貼到任何 AI 對話視窗使用。</p>
+    <div class="output-actions">
+      <button class="btn primary" id="buildBtn" type="button">🖊 組成提示詞</button>
+      <button class="btn ghost" id="copyPromptBtn" type="button">複製提示詞</button>
+    </div>
+    <div id="promptOutput"></div>
+  </section>
+
+  <section class="panel ai-panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="badge">③</span>送給 AI 生成分析</div>
+    </div>
+    <p class="panel-hint">選填功能：串接你自己的語言模型 API，直接取得該思考帽視角的完整分析表格。</p>
+
+    <details class="api-settings">
+      <summary>API 連線設定</summary>
+      <div class="api-grid">
+        <label>服務商
+          <select id="aiProvider"></select>
+        </label>
+        <label>模型
+          <input type="text" id="aiModel" placeholder="模型名稱">
+        </label>
+        <label class="full">API 金鑰
+          <input type="password" id="aiKey" placeholder="貼上你的 API Key" autocomplete="off">
+        </label>
+      </div>
+      <p class="api-note">金鑰只存在這台電腦的瀏覽器（localStorage），不會送到本工具以外的任何地方；按下「送給 AI 生成」時，組成後的提示詞會直接傳送給你選擇的服務商官方 API。</p>
+    </details>
+
+    <div class="output-actions">
+      <button class="btn primary" id="aiGenerateBtn" type="button">🚀 送給 AI 生成分析</button>
+      <button class="btn ghost" id="copyAiBtn" type="button">複製 AI 結果</button>
+    </div>
+    <div id="aiReport" class="ai-report" aria-live="polite"></div>
+    <div id="aiOutputArea"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="badge">④</span>已儲存的分析</div>
+    </div>
+    <p class="panel-hint">把目前主題與產出（含 AI 結果，若有）存成一筆有名字的紀錄，留在這台瀏覽器裡。</p>
+    <div class="save-row">
+      <input type="text" id="filenameInput" aria-label="儲存名稱" maxlength="80" spellcheck="false" placeholder="幫這筆分析取個名字">
+      <button class="btn primary" id="saveBtn" type="button">儲存</button>
+    </div>
+    <div id="savedList"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="warn-box">
+    <strong>使用警語</strong>
+    <ul>
+      <li>本工具的核心功能是把你的問題組成結構化提示詞；只有主動填入 API 金鑰並按下「送給 AI 生成分析」才會呼叫語言模型，不使用這項功能也能取得組成後的提示詞文字。</li>
+      <li>請勿輸入真實個資、公司機密或不希望被 AI 服務留存的敏感資訊——欄位內容只存在你自己瀏覽器的 localStorage，不會上傳到本工具的任何伺服器。</li>
+      <li>AI 生成的分析可能有誤或過於片面，僅供思考輔助，實際決策請自行查證與判斷，不構成專業建議。</li>
+      <li>使用「送給 AI 生成分析」所產生的 API 費用由你與所選服務商的方案自行負擔，本工具不會向你收費，也不會經手或保存金鑰。</li>
+      <li>僅供教學、課程及個人使用，禁止未經授權公開發布、販售或商業化使用。</li>
+    </ul>
+  </div>
+  <div class="footer-meta">
+    <span>製作：Mark Tsai（蔡豐全）</span>
+    <a href="manual.html">使用手冊</a>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ================= 頂部跑馬燈（獨立運作，跟下方主程式邏輯無關；共用工作區既有的公告 Google Sheet） ================= */
+(function () {
+  'use strict';
+  var MARQUEE_CHECK_URL = "https://script.google.com/macros/s/AKfycbwKX0DNNbY8y4nf90BFTHtxgfqJcHHcZasRrgycl4QAe52_hkjMWSkYk4xOsqU-JPCROw/exec";
+  var STORAGE_KEY = 'sixHatsMarquee';
+  var REFRESH_MS = 20 * 60 * 1000;
+
+  var bar = document.getElementById('marqueeBar');
+  var track = document.getElementById('marqueeTrack');
+  var lastKey = null;
+
+  function loadCache() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveCache(items) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
+  }
+  function appendParsedText(container, text) {
+    var re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    var lastIndex = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > lastIndex) container.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      var a = document.createElement('a');
+      a.href = m[2];
+      a.textContent = m[1];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.color = 'inherit';
+      a.style.textDecoration = 'underline';
+      container.appendChild(a);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) container.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+  function buildTrackContent(items) {
+    var frag = document.createDocumentFragment();
+    function appendPass() {
+      items.forEach(function (item, idx) {
+        if (idx > 0) frag.appendChild(document.createTextNode('　★　'));
+        appendParsedText(frag, item);
+      });
+    }
+    appendPass();
+    frag.appendChild(document.createTextNode('　★　'));
+    appendPass();
+    return frag;
+  }
+  function render(items) {
+    if (!items || !items.length) return;
+    var key = JSON.stringify(items);
+    if (key === lastKey) return;
+    lastKey = key;
+    track.innerHTML = '';
+    track.appendChild(buildTrackContent(items));
+    bar.classList.add('show');
+    document.body.classList.add('has-marquee');
+    var width = track.scrollWidth / 2;
+    track.style.animationDuration = Math.max(width / 80, 10) + 's';
+  }
+  function fetchMarquee() {
+    fetch(MARQUEE_CHECK_URL, { method: 'POST', body: JSON.stringify({ serial: '' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && Array.isArray(data.marquee) && data.marquee.length) {
+          saveCache(data.marquee);
+          render(data.marquee);
+        }
+      })
+      .catch(function () {});
+  }
+
+  render(loadCache());
+  fetchMarquee();
+  setInterval(fetchMarquee, REFRESH_MS);
+})();
+
+/* ================= 主程式 ================= */
+(function () {
+  'use strict';
+  function $(id){ return document.getElementById(id); }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function isLatin1(s){ return /^[\x00-\xFF]*$/.test(s); }
+
+  var HATS = {
+    white:  {name:'白', label:'白帽', en:'WHITE',  role:'客觀事實與數據', fill:'#94a3b8', ink:'#475569'},
+    red:    {name:'紅', label:'紅帽', en:'RED',    role:'直覺與情緒感受', fill:'#ef4444', ink:'#b91c1c'},
+    black:  {name:'黑', label:'黑帽', en:'BLACK',  role:'風險與批判思考', fill:'#111827', ink:'#111827'},
+    yellow: {name:'黃', label:'黃帽', en:'YELLOW', role:'正面價值與可行性', fill:'#eab308', ink:'#92400e'},
+    green:  {name:'綠', label:'綠帽', en:'GREEN',  role:'創意與新可能', fill:'#22c55e', ink:'#166534'},
+    blue:   {name:'藍', label:'藍帽', en:'BLUE',   role:'流程掌控與統整', fill:'#3b82f6', ink:'#1d4ed8'}
+  };
+  var HAT_ORDER = ['white','red','black','yellow','green','blue'];
+
+  var PRESETS = [
+    {name:'調漲售價', topic:'公司要不要調漲主力產品售價 15%'},
+    {name:'導入 AI 客服', topic:'是否要導入 AI 客服取代部分真人客服人力'},
+    {name:'全面遠距辦公', topic:'要不要開放員工全面遠距辦公'},
+    {name:'延後新品上市', topic:'新產品要不要延後三個月上市，等功能更完整再推出'},
+    {name:'超產能大訂單', topic:'是否要接下一筆超出目前產能的大訂單'}
+  ];
+
+  var STATE_KEY = 'sixHatsState';
+  var API_STORAGE_KEY = 'sixHatsApiConfig';
+  var SAVED_KEY = 'sixHatsSavedItems';
+
+  var state = {
+    topic: '',
+    mode: 'single',
+    activeHat: 'blue',
+    assembled: {single: null, sequence: null},
+    aiOutput: {single: null, sequence: null}
+  };
+
+  function loadState(){
+    try{
+      var s = JSON.parse(localStorage.getItem(STATE_KEY));
+      if(s) state = Object.assign(state, s);
+    }catch(e){}
+  }
+  function persistState(){
+    try{ localStorage.setItem(STATE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function showToast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._tm);
+    showToast._tm = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+  }
+
+  function applyHatTheme(hatKey){
+    document.documentElement.setAttribute('data-hat', hatKey);
+  }
+
+  /* ---------- 帽架 ---------- */
+  function hatSvg(color){
+    return '<svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="32" cy="33" rx="29" ry="6" fill="' + color + '"/>' +
+      '<path d="M16 30 V16 C16 8 23 3 32 3 C41 3 48 8 48 16 V30 Z" fill="' + color + '"/>' +
+      '</svg>';
+  }
+  function renderHatRack(){
+    var rack = $('hatRack');
+    rack.innerHTML = HAT_ORDER.map(function(key){
+      var h = HATS[key];
+      var active = (state.mode === 'single' && state.activeHat === key) ? ' active' : '';
+      return '<div class="hat-swatch' + active + '" data-hat="' + key + '" style="--hs-fill:' + h.fill + ';--hs-soft:' + h.fill + '33" tabindex="0" role="button" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+        hatSvg(h.fill) +
+        '<span class="hs-name">' + h.label + '</span>' +
+        '<span class="hs-role">' + h.role + '</span>' +
+        '</div>';
+    }).join('');
+    rack.classList.toggle('seq-mode', state.mode === 'sequence');
+    $('seqNote').style.display = state.mode === 'sequence' ? 'block' : 'none';
+
+    Array.prototype.forEach.call(rack.querySelectorAll('.hat-swatch'), function(el){
+      el.addEventListener('click', function(){
+        var key = el.getAttribute('data-hat');
+        applyHatTheme(key);
+        if(state.mode === 'single'){
+          state.activeHat = key;
+          persistState();
+          renderHatRack();
+        }
+      });
+      el.addEventListener('keydown', function(ev){
+        if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); el.click(); }
+      });
+    });
+  }
+
+  function setMode(mode){
+    state.mode = mode;
+    persistState();
+    Array.prototype.forEach.call($('modeToggle').querySelectorAll('button'), function(b){
+      b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+    });
+    renderHatRack();
+    applyHatTheme(state.mode === 'single' ? state.activeHat : 'blue');
+    renderPromptOutput();
+    renderAiOutput();
+  }
+  $('modeToggle').addEventListener('click', function(ev){
+    var btn = ev.target.closest('button[data-mode]');
+    if(btn) setMode(btn.getAttribute('data-mode'));
+  });
+
+  /* ---------- 主題輸入 ---------- */
+  var topicEl = $('topicInput');
+  topicEl.addEventListener('input', function(){
+    state.topic = topicEl.value;
+    persistState();
+  });
+  $('presetSelect').innerHTML += PRESETS.map(function(p, i){
+    return '<option value="' + i + '">' + p.name + '</option>';
+  }).join('');
+  $('presetSelect').addEventListener('change', function(){
+    if(this.value === '') return;
+    var preset = PRESETS[parseInt(this.value, 10)];
+    state.topic = preset.topic;
+    topicEl.value = preset.topic;
+    persistState();
+    this.value = '';
+    showToast('已套用範例「' + preset.name + '」');
+  });
+  $('clearBtn').addEventListener('click', function(){
+    state.topic = '';
+    topicEl.value = '';
+    persistState();
+  });
+
+  /* ---------- 組成提示詞 ---------- */
+  function template(hatChar, topic){
+    return '請以六頂思考帽中' + hatChar + '帽的觀點，針對' + topic + '進行分析。\n\n' +
+      '要求：\n' +
+      '1. 透過該思考帽的角度看待問題\n' +
+      '2. 一步一步推理過程（條列或階段式）\n' +
+      '3. 聚焦該思考帽的核心特性\n' +
+      '4. 最後以表格呈現（包含：分析步驟、觀察重點、推論、建議）';
+  }
+
+  function assemble(){
+    var topic = topicEl.value.trim();
+    if(!topic){ showToast('請先填入問題主題'); topicEl.focus(); return; }
+    state.topic = topic;
+    if(state.mode === 'single'){
+      state.assembled.single = {hat: state.activeHat, text: template(HATS[state.activeHat].name, topic)};
+    } else {
+      state.assembled.sequence = HAT_ORDER.map(function(key){
+        return {hat: key, text: template(HATS[key].name, topic)};
+      });
+    }
+    persistState();
+    renderPromptOutput();
+  }
+  $('buildBtn').addEventListener('click', assemble);
+
+  function renderPromptOutput(){
+    var box = $('promptOutput');
+    if(state.mode === 'single'){
+      var item = state.assembled.single;
+      box.innerHTML = '<div class="output-box">' + (item ? escapeHtml(item.text) : '') + '</div>';
+    } else {
+      var items = state.assembled.sequence;
+      if(!items){ box.innerHTML = '<div class="output-box"></div>'; return; }
+      box.innerHTML = items.map(function(it){
+        var h = HATS[it.hat];
+        return '<details class="hat-card" style="--hc-fill:' + h.fill + ';--hc-ink:' + h.ink + '">' +
+          '<summary><span class="hc-dot"></span>' + h.label + '（' + h.role + '）</summary>' +
+          '<div class="hc-body"><div class="output-box" style="margin-top:0;">' + escapeHtml(it.text) + '</div></div>' +
+          '</details>';
+      }).join('');
+    }
+  }
+
+  $('copyPromptBtn').addEventListener('click', function(){
+    var text = '';
+    if(state.mode === 'single'){
+      text = state.assembled.single ? state.assembled.single.text : '';
+    } else if(state.assembled.sequence){
+      text = state.assembled.sequence.map(function(it){
+        return '【' + HATS[it.hat].label + '】\n' + it.text;
+      }).join('\n\n---\n\n');
+    }
+    if(!text){ showToast('請先組成提示詞'); return; }
+    navigator.clipboard.writeText(text).then(function(){ showToast('已複製提示詞'); });
+  });
+
+  /* ---------- BYOK：串接 Claude／OpenAI／Gemini／OpenRouter（金鑰只存本機瀏覽器） ---------- */
+  var AI_PROVIDERS = {
+    claude:     {label:'Claude（Anthropic）',       defaultModel:'claude-opus-4-8'},
+    openai:     {label:'OpenAI',                    defaultModel:'gpt-4o-mini'},
+    gemini:     {label:'Gemini（Google AI Studio）', defaultModel:'gemini-3.5-flash'},
+    openrouter: {label:'OpenRouter',                defaultModel:'openai/gpt-4o-mini'}
+  };
+
+  function loadApiConfig(){
+    try{ return JSON.parse(localStorage.getItem(API_STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function persistApiConfig(){
+    try{
+      localStorage.setItem(API_STORAGE_KEY, JSON.stringify({
+        provider: $('aiProvider').value,
+        model: $('aiModel').value.trim(),
+        apiKey: $('aiKey').value.trim()
+      }));
+    }catch(e){}
+  }
+  function initAiPanel(){
+    var sel = $('aiProvider');
+    sel.innerHTML = Object.keys(AI_PROVIDERS).map(function(k){
+      return '<option value="' + k + '">' + AI_PROVIDERS[k].label + '</option>';
+    }).join('');
+    var cfg = loadApiConfig();
+    sel.value = (cfg.provider && AI_PROVIDERS[cfg.provider]) ? cfg.provider : 'claude';
+    $('aiModel').value = cfg.model || AI_PROVIDERS[sel.value].defaultModel;
+    $('aiKey').value = cfg.apiKey || '';
+
+    sel.addEventListener('change', function(){
+      var modelEl = $('aiModel');
+      var isDefault = Object.keys(AI_PROVIDERS).some(function(k){ return AI_PROVIDERS[k].defaultModel === modelEl.value.trim(); });
+      if(!modelEl.value.trim() || isDefault) modelEl.value = AI_PROVIDERS[sel.value].defaultModel;
+      persistApiConfig();
+    });
+    $('aiModel').addEventListener('input', persistApiConfig);
+    $('aiKey').addEventListener('input', persistApiConfig);
+  }
+
+  async function callLLM(provider, model, apiKey, prompt, onRetry){
+    var url, headers, body, extract;
+    if(provider === 'claude'){
+      url = 'https://api.anthropic.com/v1/messages';
+      headers = {
+        'content-type': 'application/json', 'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'
+      };
+      body = {model: model, max_tokens: 4000, messages: [{role: 'user', content: prompt}]};
+      extract = function(d){
+        if(d.stop_reason === 'refusal') throw new Error('模型拒絕了這個請求（refusal）');
+        var t = (d.content || []).filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
+        if(!t) throw new Error('回應中沒有文字內容');
+        return t;
+      };
+    } else if(provider === 'openai'){
+      url = 'https://api.openai.com/v1/chat/completions';
+      headers = {'content-type': 'application/json', 'authorization': 'Bearer ' + apiKey};
+      body = {model: model, messages: [{role: 'user', content: prompt}]};
+      extract = function(d){
+        var t = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+        if(!t) throw new Error('回應中沒有文字內容');
+        return t;
+      };
+    } else if(provider === 'gemini'){
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+      headers = {'content-type': 'application/json', 'x-goog-api-key': apiKey};
+      body = {contents: [{parts: [{text: prompt}]}]};
+      extract = function(d){
+        var parts = (d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [];
+        var t = parts.map(function(p){ return p.text || ''; }).join('');
+        if(!t) throw new Error('回應中沒有文字內容');
+        return t;
+      };
+    } else if(provider === 'openrouter'){
+      url = 'https://openrouter.ai/api/v1/chat/completions';
+      headers = {'content-type': 'application/json', 'authorization': 'Bearer ' + apiKey};
+      body = {model: model, messages: [{role: 'user', content: prompt}]};
+      extract = function(d){
+        var t = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+        if(!t) throw new Error('回應中沒有文字內容');
+        return t;
+      };
+    } else {
+      throw new Error('不支援的服務商');
+    }
+
+    var RETRYABLE = {429:1, 500:1, 503:1, 529:1};
+    var MAX_TRIES = 3;
+    for(var attempt = 1; attempt <= MAX_TRIES; attempt++){
+      var resp = await fetch(url, {method: 'POST', headers: headers, body: JSON.stringify(body), signal: AbortSignal.timeout(180000)});
+      var raw = await resp.text();
+      if(resp.ok) return extract(JSON.parse(raw));
+      var msg = raw.slice(0, 300);
+      try{
+        var err = JSON.parse(raw);
+        msg = (err.error && err.error.message) || err.message || msg;
+      }catch(e){}
+      if(RETRYABLE[resp.status] && attempt < MAX_TRIES){
+        var waitSec = attempt * 8;
+        if(onRetry) onRetry(attempt, resp.status, waitSec);
+        await new Promise(function(r){ setTimeout(r, waitSec * 1000); });
+        continue;
+      }
+      if(resp.status === 404) msg += '——這通常表示模型名稱錯誤或已停用，請到該服務商的模型列表確認目前可用的模型 ID';
+      if(RETRYABLE[resp.status]) msg += '——已自動重試 ' + (MAX_TRIES - 1) + ' 次仍失敗，多為服務商暫時過載，請稍候幾分鐘再試，或更換模型／服務商';
+      throw new Error('API 回應 ' + resp.status + '：' + msg);
+    }
+  }
+
+  /* 把 AI 回覆中的 GitHub 風格 markdown 表格轉成真正的 <table>；解析失敗就回傳 null，外層退回純文字顯示 */
+  function parseMarkdownTable(text){
+    var lines = text.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l.length; });
+    var tableStart = -1;
+    for(var i = 0; i < lines.length - 1; i++){
+      if(lines[i].indexOf('|') !== -1 && /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(lines[i+1])){
+        tableStart = i;
+        break;
+      }
+    }
+    if(tableStart === -1) return null;
+    function splitRow(line){
+      var l = line.trim().replace(/^\||\|$/g, '');
+      return l.split('|').map(function(c){ return c.trim(); });
+    }
+    try{
+      var header = splitRow(lines[tableStart]);
+      var rows = [];
+      for(var r = tableStart + 2; r < lines.length; r++){
+        if(lines[r].indexOf('|') === -1) break;
+        rows.push(splitRow(lines[r]));
+      }
+      if(!rows.length) return null;
+      var html = '<div class="hat-table-wrap"><table class="hat-table"><thead><tr>' +
+        header.map(function(h){ return '<th>' + escapeHtml(h) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' +
+        rows.map(function(row){
+          return '<tr>' + row.map(function(c){ return '<td>' + escapeHtml(c) + '</td>'; }).join('') + '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+      var before = lines.slice(0, tableStart).join('\n');
+      return (before ? '<div style="margin-bottom:10px;white-space:pre-wrap;">' + escapeHtml(before) + '</div>' : '') + html;
+    }catch(e){ return null; }
+  }
+
+  function renderResultHtml(text){
+    return parseMarkdownTable(text) || ('<div class="output-box" style="margin-top:0;">' + escapeHtml(text) + '</div>');
+  }
+
+  function renderAiOutput(){
+    var box = $('aiOutputArea');
+    if(state.mode === 'single'){
+      var item = state.aiOutput.single;
+      box.innerHTML = item ? renderResultHtml(item.text) : '<div class="output-box"></div>';
+    } else {
+      var items = state.aiOutput.sequence;
+      var assembledSeq = state.assembled.sequence;
+      if(!items && !assembledSeq){ box.innerHTML = '<div class="output-box"></div>'; return; }
+      var hats = assembledSeq ? assembledSeq.map(function(it){ return it.hat; }) : HAT_ORDER;
+      box.innerHTML = hats.map(function(hatKey, idx){
+        var h = HATS[hatKey];
+        var result = items && items[idx];
+        var status = result ? (result.error ? '失敗' : '完成') : '尚未產生';
+        var body = result
+          ? (result.error ? '<div class="output-box" style="margin-top:0;">' + escapeHtml(result.error) + '</div>' : renderResultHtml(result.text))
+          : '<div class="output-box" style="margin-top:0;"></div>';
+        return '<details class="hat-card" open style="--hc-fill:' + h.fill + ';--hc-ink:' + h.ink + '">' +
+          '<summary><span class="hc-dot"></span>' + h.label + '（' + h.role + '）<span class="hc-status">' + status + '</span></summary>' +
+          '<div class="hc-body">' + body + '</div>' +
+          '</details>';
+      }).join('');
+    }
+  }
+
+  $('aiGenerateBtn').addEventListener('click', async function(){
+    var provider = $('aiProvider').value;
+    var model = $('aiModel').value.trim();
+    var apiKey = $('aiKey').value.trim();
+    var report = $('aiReport');
+
+    if(!apiKey){ report.innerHTML = '<div class="bad">請先在「API 連線設定」填入 API 金鑰</div>'; return; }
+    if(!model){ report.innerHTML = '<div class="bad">請填入模型名稱</div>'; return; }
+    if(!isLatin1(apiKey)){ report.innerHTML = '<div class="bad">API 金鑰包含不可用的字元，請重新確認只貼上金鑰本身</div>'; return; }
+    if(!isLatin1(model)){ report.innerHTML = '<div class="bad">模型名稱包含不可用的字元，請確認只填入英數字模型 ID</div>'; return; }
+
+    if(state.mode === 'single' && !state.assembled.single){ assemble(); if(!state.assembled.single) return; }
+    if(state.mode === 'sequence' && !state.assembled.sequence){ assemble(); if(!state.assembled.sequence) return; }
+
+    persistApiConfig();
+    var btn = $('aiGenerateBtn');
+    btn.disabled = true;
+
+    try{
+      if(state.mode === 'single'){
+        var hat = state.assembled.single.hat;
+        report.innerHTML = '<div class="ok">呼叫 ' + AI_PROVIDERS[provider].label + '（' + escapeHtml(model) + '）中，請稍候…</div>';
+        var text = await callLLM(provider, model, apiKey, state.assembled.single.text, function(attempt, status, waitSec){
+          report.innerHTML = '<div class="warn">API 回應 ' + status + '（服務商暫時過載／限流），' + waitSec + ' 秒後自動重試（第 ' + attempt + ' 次）…</div>';
+        });
+        state.aiOutput.single = {hat: hat, text: text};
+        report.innerHTML = '<div class="ok">已產生完成</div>';
+      } else {
+        var items = state.assembled.sequence;
+        var results = [];
+        state.aiOutput.sequence = results;
+        for(var i = 0; i < items.length; i++){
+          var h = HATS[items[i].hat];
+          report.innerHTML = '<div class="ok">產生中（' + (i+1) + '／' + items.length + '）：' + h.label + '…</div>';
+          renderAiOutput();
+          try{
+            var t = await callLLM(provider, model, apiKey, items[i].text, function(attempt, status, waitSec){
+              report.innerHTML = '<div class="warn">' + h.label + ' API 回應 ' + status + '，' + waitSec + ' 秒後自動重試（第 ' + attempt + ' 次）…</div>';
+            });
+            results.push({hat: items[i].hat, text: t});
+          }catch(err){
+            results.push({hat: items[i].hat, error: err.message});
+          }
+          renderAiOutput();
+        }
+        report.innerHTML = '<div class="ok">六頂帽子已全部產生完成</div>';
+      }
+      persistState();
+      renderAiOutput();
+    }catch(err){
+      report.innerHTML = '<div class="bad">' + escapeHtml(err.message) + '</div>';
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  $('copyAiBtn').addEventListener('click', function(){
+    var text = '';
+    if(state.mode === 'single'){
+      text = state.aiOutput.single ? state.aiOutput.single.text : '';
+    } else if(state.aiOutput.sequence){
+      text = state.aiOutput.sequence.map(function(it){
+        return '【' + HATS[it.hat].label + '】\n' + (it.error ? '（失敗：' + it.error + '）' : it.text);
+      }).join('\n\n---\n\n');
+    }
+    if(!text){ showToast('尚未有 AI 產生結果'); return; }
+    navigator.clipboard.writeText(text).then(function(){ showToast('已複製 AI 結果'); });
+  });
+
+  /* ---------- 已儲存的分析 ---------- */
+  function loadSaved(){
+    try{ return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; }catch(e){ return []; }
+  }
+  function persistSaved(items){
+    try{ localStorage.setItem(SAVED_KEY, JSON.stringify(items)); }catch(e){}
+  }
+  function renderSavedList(){
+    var items = loadSaved();
+    var el = $('savedList');
+    if(!items.length){ el.innerHTML = '<p class="saved-empty">目前沒有已儲存的分析。</p>'; return; }
+    el.innerHTML = items.map(function(it){
+      var modeLabel = it.mode === 'sequence' ? '六頂依序' : HATS[it.assembled && it.assembled.hat || 'blue'].label;
+      return '<div class="saved-item" data-id="' + it.id + '">' +
+        '<div><div class="saved-item-name">' + escapeHtml(it.name) + '</div>' +
+        '<div class="saved-item-meta">' + modeLabel + ' · ' + new Date(it.savedAt).toLocaleString('zh-TW') + '</div></div>' +
+        '<div class="saved-item-actions">' +
+        '<button class="chip" data-act="load">載入</button>' +
+        '<button class="chip" data-act="download">下載 .txt</button>' +
+        '<button class="chip" data-act="delete">刪除</button>' +
+        '</div></div>';
+    }).join('');
+  }
+  $('saveBtn').addEventListener('click', function(){
+    var name = $('filenameInput').value.trim();
+    if(!name){ showToast('請先填寫儲存名稱'); return; }
+    if(!state.topic.trim()){ showToast('請先填入問題主題'); return; }
+    var items = loadSaved();
+    items.unshift({
+      id: 'h' + Date.now(),
+      name: name,
+      savedAt: Date.now(),
+      topic: state.topic,
+      mode: state.mode,
+      activeHat: state.activeHat,
+      assembled: state.mode === 'single' ? state.assembled.single : state.assembled.sequence,
+      aiOutput: state.mode === 'single' ? state.aiOutput.single : state.aiOutput.sequence
+    });
+    persistSaved(items);
+    $('filenameInput').value = '';
+    renderSavedList();
+    showToast('已儲存「' + name + '」');
+  });
+  $('savedList').addEventListener('click', function(ev){
+    var btn = ev.target.closest('button[data-act]');
+    if(!btn) return;
+    var row = ev.target.closest('.saved-item');
+    var id = row.getAttribute('data-id');
+    var items = loadSaved();
+    var item = items.find(function(x){ return x.id === id; });
+    if(!item) return;
+    var act = btn.getAttribute('data-act');
+    if(act === 'load'){
+      state.topic = item.topic;
+      state.mode = item.mode;
+      state.activeHat = item.activeHat || 'blue';
+      if(item.mode === 'single'){
+        state.assembled.single = item.assembled;
+        state.aiOutput.single = item.aiOutput;
+      } else {
+        state.assembled.sequence = item.assembled;
+        state.aiOutput.sequence = item.aiOutput;
+      }
+      persistState();
+      topicEl.value = state.topic;
+      setMode(state.mode);
+      renderPromptOutput();
+      renderAiOutput();
+      showToast('已載入「' + item.name + '」');
+    } else if(act === 'download'){
+      var lines = ['問題主題：' + item.topic, '模式：' + (item.mode === 'sequence' ? '六頂依序' : HATS[item.activeHat || 'blue'].label), ''];
+      if(item.mode === 'single'){
+        if(item.assembled) lines.push('【提示詞】', item.assembled.text, '');
+        if(item.aiOutput) lines.push('【AI 分析結果】', item.aiOutput.error ? '（失敗：' + item.aiOutput.error + '）' : item.aiOutput.text, '');
+      } else {
+        (item.assembled || []).forEach(function(a, i){
+          var h = HATS[a.hat];
+          lines.push('【' + h.label + ' · 提示詞】', a.text, '');
+          var r = item.aiOutput && item.aiOutput[i];
+          if(r) lines.push('【' + h.label + ' · AI 分析結果】', r.error ? '（失敗：' + r.error + '）' : r.text, '');
+        });
+      }
+      var blob = new Blob([lines.join('\n')], {type: 'text/plain;charset=utf-8'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = item.name.replace(/[\\/:*?"<>|]/g, '_') + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } else if(act === 'delete'){
+      if(!confirm('確定要刪除「' + item.name + '」？')) return;
+      persistSaved(items.filter(function(x){ return x.id !== id; }));
+      renderSavedList();
+    }
+  });
+
+  /* ---------- 初始化 ---------- */
+  loadState();
+  topicEl.value = state.topic || '';
+  applyHatTheme(state.mode === 'single' ? state.activeHat : 'blue');
+  Array.prototype.forEach.call($('modeToggle').querySelectorAll('button'), function(b){
+    b.classList.toggle('active', b.getAttribute('data-mode') === state.mode);
+  });
+  renderHatRack();
+  $('hatRack').classList.toggle('seq-mode', state.mode === 'sequence');
+  $('seqNote').style.display = state.mode === 'sequence' ? 'block' : 'none';
+  renderPromptOutput();
+  initAiPanel();
+  renderAiOutput();
+  renderSavedList();
+})();
+</script>
+</body>
+</html>

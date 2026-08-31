@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>使用手冊 · 六頂思考帽分析產生器</title>
+<style>
+  :root{
+    --bg:#eef1f5; --bg-alt:#e5eaf0; --panel:#ffffff; --panel-raised:#f6f8fa;
+    --line:#d7dee6; --line-soft:#e6eaf0; --ink:#1f2937; --ink-dim:#5b6472; --ink-faint:#94a0b0;
+    --accent:#2563eb; --accent-ink:#1d4ed8; --red:#dc2626;
+    --font-mono:ui-monospace,"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --font-sans:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.75;}
+  a{color:var(--accent-ink);}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;padding:16px 24px;
+    border-bottom:1px solid var(--line-soft);background:var(--panel);position:sticky;top:0;z-index:10;
+  }
+  .brand{font-weight:900;}
+  .topbar a.back{
+    font-size:13px;font-weight:700;color:var(--ink-dim);text-decoration:none;
+    border:1.5px solid var(--line);padding:7px 14px;border-radius:8px;
+  }
+  .topbar a.back:hover{color:var(--accent-ink);border-color:var(--accent);}
+  main{max-width:720px;margin:0 auto;padding:44px 24px 80px;}
+  h1{font-size:30px;margin:0 0 8px;font-weight:900;}
+  .sub{color:var(--ink-dim);margin:0 0 36px;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:20px;
+    box-shadow:0 1px 2px rgba(20,30,50,.04);
+  }
+  .card h2{font-size:19px;margin:0 0 14px;color:var(--accent-ink);}
+  .card h3{font-size:15px;margin:18px 0 8px;color:var(--ink);}
+  .card p, .card li{color:var(--ink-dim);font-size:14.5px;}
+  .card ul, .card ol{padding-left:20px;margin:8px 0;}
+  table.hats{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px;}
+  table.hats th, table.hats td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  table.hats th{background:var(--panel-raised);color:var(--ink-dim);}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .tip{
+    background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.25);
+    border-radius:8px;padding:12px 16px;font-size:13.5px;color:var(--ink-dim);margin-top:12px;
+  }
+  .warn{
+    background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.28);
+    border-radius:8px;padding:14px 16px;font-size:13.5px;color:var(--ink-dim);
+  }
+  .warn strong{color:var(--red);}
+  code{background:var(--panel-raised);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:13px;}
+  footer{border-top:1px solid var(--line-soft);background:var(--panel);padding:24px;text-align:center;font-size:12.5px;color:var(--ink-faint);font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">🎩 六頂思考帽分析產生器</div>
+  <a class="back" href="index.html">← 回到產生器</a>
+</div>
+
+<main>
+  <h1>使用手冊</h1>
+  <p class="sub">「六頂思考帽」是愛德華．狄波諾（Edward de Bono）提出的思考方法：把「立場」拆成六種可以輪流切換的角度，避免討論時大家的情緒、事實、風險、創意混在一起互相打架。本工具幫你把問題主題套進固定的提示詞格式，一頂帽子一頂帽子（或六頂依序）產出結構化分析。</p>
+
+  <div class="card">
+    <h2>六頂帽子代表什麼</h2>
+    <table class="hats">
+      <thead><tr><th>帽子</th><th>核心特性</th><th>常見問句</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch" style="background:#94a3b8"></span>白帽</td><td>客觀事實與數據</td><td>我們實際掌握了哪些資訊？還缺什麼資料？</td></tr>
+        <tr><td><span class="swatch" style="background:#ef4444"></span>紅帽</td><td>直覺與情緒感受</td><td>我對這件事的第一直覺、感覺是什麼？</td></tr>
+        <tr><td><span class="swatch" style="background:#111827"></span>黑帽</td><td>風險與批判思考</td><td>哪裡可能出錯？有什麼風險與限制？</td></tr>
+        <tr><td><span class="swatch" style="background:#eab308"></span>黃帽</td><td>正面價值與可行性</td><td>好處是什麼？為什麼值得做？</td></tr>
+        <tr><td><span class="swatch" style="background:#22c55e"></span>綠帽</td><td>創意與新可能</td><td>還有沒有其他做法？能不能換個角度？</td></tr>
+        <tr><td><span class="swatch" style="background:#3b82f6"></span>藍帽</td><td>流程掌控與統整</td><td>目前討論到哪了？下一步該收斂成什麼結論？</td></tr>
+      </tbody>
+    </table>
+    <div class="tip">實務上常以「藍（開場）→白→紅→黑→黃→綠→藍（收斂）」的順序輪流思考；本工具的「六頂依序」模式固定以「白→紅→黑→黃→綠→藍」各產出一份，方便快速掃過六個角度。</div>
+  </div>
+
+  <div class="card">
+    <h2>操作步驟</h2>
+    <ol>
+      <li>在「① 問題主題」填入一句話描述的問題或決策，也可以直接套用範例快速開始</li>
+      <li>在畫面上方選擇模式：「🎯 單一帽」只看一個角度，「🔄 六頂依序」一次產出六個角度；單一帽模式下點選任一頂帽子即可切換，整頁配色會跟著換成該帽子的顏色</li>
+      <li>按「🖊 組成提示詞」，下方會出現組成後的提示詞文字，可按「複製提示詞」貼到任何 AI 對話框自行使用——不需要任何 API 金鑰</li>
+      <li>若想直接在本工具取得 AI 產生的分析結果，展開「API 連線設定」填入自己的金鑰，按「🚀 送給 AI 生成分析」；六頂依序模式會依序逐一呼叫並即時顯示進度</li>
+      <li>AI 若以表格格式回覆，本工具會自動轉成表格顯示；若格式不規則，會直接顯示原始文字</li>
+      <li>滿意的結果可以在「④ 已儲存的分析」取名儲存，之後隨時載回來或下載成 .txt 檔</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>送給 AI 生成分析（選用，需自備 API 金鑰）</h2>
+    <p>組成提示詞之後，可以直接在本工具呼叫你自己的語言模型 API，取得 AI 實際產生的分析內容。</p>
+    <ol>
+      <li>展開「API 連線設定」，選擇服務商（Claude／OpenAI／Gemini／OpenRouter），填入你自己申請的 API 金鑰；模型欄有預設值，也可以自行改成你想用的模型 ID</li>
+      <li>按「🚀 送給 AI 生成分析」——若還沒按過「組成提示詞」，會自動先組成一次</li>
+      <li>單一帽模式會產生一份結果；六頂依序模式會逐一呼叫六次，任一頂失敗不會中斷其他頂的產生，失敗的那頂會顯示錯誤訊息</li>
+    </ol>
+    <div class="tip">API 金鑰要自己到各服務商網站申請，使用時依你與該服務商的方案計費，本工具不會向你收費，也不會經手你的金鑰——金鑰只存在你這台電腦的瀏覽器，且直接連到服務商官方 API，不會經過本工具以外的任何伺服器。</div>
+  </div>
+
+  <div class="card">
+    <h2>已儲存的分析</h2>
+    <p>「已儲存的分析」是一個留在瀏覽器裡的紀錄清單，<strong>按「儲存」不會下載任何檔案</strong>，只是把目前主題與產出（含 AI 結果，若有）存成一筆有名字的紀錄。</p>
+    <ol>
+      <li>在儲存名稱欄位打一個好記的名字，按「儲存」</li>
+      <li>清單中每一筆紀錄可以「載入」（會覆蓋目前主題與所選模式）、「下載 .txt」或「刪除」</li>
+    </ol>
+    <div class="tip">「儲存」＝存進這台瀏覽器的清單；「下載 .txt」才會真的產生一個檔案到你的下載資料夾。兩者是分開的動作。</div>
+  </div>
+
+  <div class="card">
+    <h2>隱私說明</h2>
+    <ul>
+      <li>你填寫的問題主題、組成的提示詞與「已儲存的分析」清單都只存在自己瀏覽器的 localStorage，關閉分頁後下次打開仍會保留，但不會傳送到任何伺服器；換一台電腦或清除瀏覽器資料就會不見，請自行用「下載 .txt」備份重要內容</li>
+      <li>複製提示詞後，貼到哪個 AI 服務、該服務如何處理這些文字，就依該服務自己的隱私政策規範，與本工具無關</li>
+      <li>API 金鑰同樣只存在瀏覽器的 localStorage；按下「送給 AI 生成分析」時，組成的提示詞會直接連線送到你選擇的服務商官方 API，不會經過本工具作者或任何第三方伺服器</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>使用警語</h2>
+    <div class="warn">
+      <strong>請注意：</strong>
+      <ul>
+        <li>本工具的核心功能是把你的問題組成結構化提示詞；只有主動填入 API 金鑰並按下「送給 AI 生成分析」才會呼叫語言模型，不使用這項功能也能取得組成後的提示詞文字</li>
+        <li>請勿輸入真實個資、公司機密或不希望被 AI 服務留存的敏感資訊</li>
+        <li>AI 生成的分析可能有誤或過於片面，僅供思考輔助，實際決策請自行查證與判斷，不構成專業建議</li>
+        <li>使用「送給 AI 生成分析」所產生的 API 費用由你與所選服務商的方案自行負擔，本工具不會向你收費</li>
+        <li>本工具與創作者不對使用產生提示詞後所得之任何 AI 輸出結果負責</li>
+        <li>僅供教學、課程及個人使用，禁止未經授權公開發布、販售或商業化使用</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>創作者資料</h2>
+    <p><strong>Mark Tsai（蔡豐全）</strong></p>
+    <p>聯絡信箱：<a href="mailto:tsaimark@gmail.com">tsaimark@gmail.com</a></p>
+
+    <h3>專長</h3>
+    <p>銷售數據分析、AI 工具運用、政府補助計畫申請、創業、跨境電商</p>
+
+    <h3>證照</h3>
+    <ul>
+      <li>青創總會 創業輔導顧問師班（2013）</li>
+      <li>青創總會 網路行銷講師培訓班（2014）</li>
+      <li>阿里巴巴 P4P 認證講師（2016）</li>
+      <li>iCap 訓練規劃與評量職能基準課程（2017）</li>
+      <li>iCap 職能導向課程申請認證實作班（2023）</li>
+      <li>iPAS AI 應用規劃師－初級（2025）</li>
+      <li>新北市社會局社區數位陪伴員（2025）</li>
+    </ul>
+
+    <h3>經歷</h3>
+    <ul>
+      <li>勞動力發展署桃竹苗分署 創業顧問（2017－迄今）</li>
+      <li>勞動力發展署（北北基）小型企業人力提升計畫 顧問（2019－迄今）</li>
+      <li>勞動力發展署（桃竹苗）小型企業人力提升計畫 顧問（2019－迄今）</li>
+      <li>農業部農業科技司「科技農企業雙軸轉型躍升發展」科技計畫 業師（2025－2026）</li>
+      <li>勞動力發展署 企業人力資源提升計畫 審查委員（2024）</li>
+      <li>勞動力發展署 職前訓練評鑑計畫 委員（2022）</li>
+      <li>勞動部桃竹苗分署－桃竹苗區域運籌人力資源整合服務計畫 顧問（2022－2023）</li>
+      <li>經濟部中小企業處 SBIR 海選專案 評審委員（2019－2024）</li>
+      <li>勞動力發展署 數位學習課程清單審查會議 審查委員（2024－2025）</li>
+      <li>輔仁大學創新跨領域學院 課務委員（2024－2025）</li>
+      <li>台北市進出口商業同業公會 跨境電商生態村 顧問</li>
+      <li>台灣網商協會 顧問</li>
+      <li>中華職能開發策進會 顧問（2018－2020）</li>
+      <li>新北市汽車美容人員職業工會 顧問（2023－迄今）</li>
+      <li>中華網路行銷講師協會 顧問（2022－迄今）</li>
+      <li>新北市社企電商基地 輔導顧問（2018－2020）</li>
+      <li>阿里巴巴國際站平台 認證講師（2016）</li>
+      <li>巨匠電腦 跨境電子商務班 講師（2016－2017）</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>授權與使用限制</h2>
+    <p>本工具僅供<strong>教學、課程及個人使用</strong>，禁止未經授權公開發布、販售或商業化使用。如需其他用途，請先取得創作者授權。</p>
+  </div>
+
+</main>
+
+<footer>
+  製作：Mark Tsai｜<a href="index.html">回到產生器</a>
+</footer>
+
+</body>
+</html>
