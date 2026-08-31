@@ -193,39 +193,24 @@
   #printHeader{display:none;}
   #printWatermark{display:none;}
   @media print{
-    @page{margin:16mm 14mm;}
     #marqueeBar,.topbar,.hero,footer,#toast,
     #topicPanel,#promptPanel,#savedPanel,
-    .output-actions,.api-settings,#aiReport,#aiProgressWrap,.force-regen-row,
-    .ai-panel .panel-head,.ai-panel > .panel-hint{display:none !important;}
-    html,body{background:#fff;color:#1a1f29;padding-top:0 !important;}
-    body{font-family:var(--font-sans);}
-    main{padding-top:0;max-width:100%;}
-    .ai-panel{border:none !important;box-shadow:none;background:transparent;padding:0;}
-
-    #printHeader{display:block;margin-bottom:26px;padding-bottom:14px;border-bottom:2px solid #1d4ed8;}
-    .ph-brand{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;color:#6b7686;margin-bottom:8px;}
-    .ph-topic{font-size:21px;font-weight:900;margin:0 0 8px;color:#111827;line-height:1.4;}
-    .ph-meta{font-family:var(--font-mono);font-size:11px;color:#6b7686;}
-
-    .hat-card{border:none !important;border-left:3px solid var(--hc-fill,#999) !important;border-radius:0;margin:0 0 26px;padding:0 0 0 16px;break-inside:avoid;}
-    .hat-card summary{background:transparent;padding:0 0 12px;font-size:14.5px;}
-    .hat-card summary .hc-dot{width:10px;height:10px;}
-    .hat-card summary .hc-status{color:#6b7686;}
-    .hat-card .hc-body{padding:0;}
-    .output-box{background:transparent;border:none;color:#1a1f29;font-family:var(--font-sans);font-size:12.5px;padding:0;line-height:1.85;}
-
-    .hat-table-wrap{overflow:visible;}
-    .hat-table{width:100%;border-collapse:collapse;font-size:12px;}
-    .hat-table th{background:transparent !important;border:none;border-bottom:1.5px solid #1a1f29;padding:7px 10px 7px 0;text-align:left;font-weight:800;color:#1a1f29;}
-    .hat-table td{border:none;border-bottom:1px solid #e2e5ea;padding:8px 10px 8px 0;vertical-align:top;line-height:1.6;}
-    .hat-table tr:last-child td{border-bottom:none;}
-
+    .output-actions,.api-settings,#aiReport,#aiProgressWrap{display:none !important;}
+    body{background:#fff;color:#000;padding-top:0 !important;}
+    main{padding-top:0;}
+    .panel{border:1px solid #999;box-shadow:none;break-inside:avoid;}
+    .output-box{background:#fff;color:#000;border-color:#999;}
+    .hat-card{border-left-color:#000 !important;break-inside:avoid;}
+    .hat-table th{background:#f0f0f0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    #printHeader{
+      display:block;font-family:var(--font-mono);font-size:12px;color:#000;
+      border-bottom:1px solid #999;padding-bottom:10px;margin-bottom:16px;
+    }
     #printWatermark{
       display:flex !important;align-items:center;justify-content:center;overflow:hidden;
       position:fixed;inset:0;z-index:9999;pointer-events:none;
     }
-    #printWatermark img{width:38%;min-width:200px;max-width:360px;opacity:.1;}
+    #printWatermark img{width:42%;min-width:200px;max-width:380px;opacity:.11;}
   }
 
   @media (max-width:600px){
@@ -1027,11 +1012,8 @@
   $('printAiBtn').addEventListener('click', function(){
     var hasOutput = state.mode === 'single' ? !!state.aiOutput.single : !!(state.aiOutput.sequence && state.aiOutput.sequence.some(function(r){ return r; }));
     if(!hasOutput){ showToast('尚未有 AI 產生結果，請先送給 AI 生成分析'); return; }
-    var modeLabel = state.mode === 'sequence' ? '六頂依序分析' : HATS[state.activeHat].label + '視角分析';
-    $('printHeader').innerHTML =
-      '<div class="ph-brand">🎩 六頂思考帽分析產生器</div>' +
-      '<h1 class="ph-topic">' + escapeHtml(state.topic) + '</h1>' +
-      '<div class="ph-meta">' + modeLabel + '　｜　' + new Date().toLocaleString('zh-TW') + '</div>';
+    var modeLabel = state.mode === 'sequence' ? '六頂依序' : HATS[state.activeHat].label;
+    $('printHeader').textContent = '問題主題：' + state.topic + '　｜　模式：' + modeLabel + '　｜　產出時間：' + new Date().toLocaleString('zh-TW');
     // 列印時把所有帽子卡片強制展開，避免 <details> 收合狀態下列印出來是空白的
     Array.prototype.forEach.call(document.querySelectorAll('.hat-card'), function(d){ d.open = true; });
     window.print();
