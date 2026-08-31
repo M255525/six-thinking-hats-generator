@@ -153,6 +153,11 @@
   .api-grid label{grid-column:span 1;font-size:12px;color:var(--ink-faint);display:block;}
   .api-grid label.full{grid-column:1 / -1;}
   .api-note{font-size:11.5px;color:var(--ink-faint);margin-top:8px;line-height:1.6;}
+  .force-regen-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;}
+  .force-regen-label{font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);white-space:nowrap;}
+  .force-chip{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--fc-fill,var(--line));border-radius:999px;padding:4px 11px 4px 8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink-dim);transition:.15s;}
+  .force-chip input{margin:0;accent-color:var(--fc-fill,var(--accent));}
+  .force-chip.checked{background:var(--fc-fill,var(--accent));color:#fff;}
   .progress-wrap{margin-top:14px;}
   .progress-track{height:8px;border-radius:999px;background:var(--panel-raised);border:1px solid var(--line);overflow:hidden;}
   .progress-fill{height:100%;width:0%;background:var(--accent);border-radius:999px;transition:width .35s ease;}
@@ -291,6 +296,11 @@
       </div>
       <p class="api-note">金鑰只存在這台電腦的瀏覽器（localStorage），不會送到本工具以外的任何地方；按下「送給 AI 生成」時，組成後的提示詞會直接傳送給你選擇的服務商官方 API。</p>
     </details>
+
+    <div class="force-regen-row" id="forceRegenRow" style="display:none;">
+      <span class="force-regen-label">🔁 強制重新生成：</span>
+      <span id="forceRegenChips"></span>
+    </div>
 
     <div class="output-actions">
       <button class="btn primary" id="aiGenerateBtn" type="button">🚀 送給 AI 生成分析</button>
@@ -583,6 +593,41 @@
     });
   }
 
+  /* ---------- 強制重新生成勾選（僅六頂依序模式使用） ---------- */
+  function renderForceRegenRow(){
+    var wrap = $('forceRegenChips');
+    wrap.innerHTML = HAT_ORDER.map(function(key){
+      var h = HATS[key];
+      return '<label class="force-chip" style="--fc-fill:' + h.fill + '">' +
+        '<input type="checkbox" data-hat="' + key + '"> ' + h.label +
+        '</label>';
+    }).join('');
+    Array.prototype.forEach.call(wrap.querySelectorAll('input[type=checkbox]'), function(cb){
+      cb.addEventListener('change', function(){
+        cb.closest('.force-chip').classList.toggle('checked', cb.checked);
+      });
+    });
+  }
+  function updateForceRegenVisibility(){
+    $('forceRegenRow').style.display = state.mode === 'sequence' ? 'flex' : 'none';
+  }
+  function getForceRegenSet(){
+    var set = {};
+    Array.prototype.forEach.call($('forceRegenChips').querySelectorAll('input[type=checkbox]:checked'), function(cb){
+      set[cb.getAttribute('data-hat')] = true;
+    });
+    return set;
+  }
+  function clearForceRegen(hatKeys){
+    Array.prototype.forEach.call($('forceRegenChips').querySelectorAll('input[type=checkbox]'), function(cb){
+      var key = cb.getAttribute('data-hat');
+      if(!hatKeys || hatKeys[key]){
+        cb.checked = false;
+        cb.closest('.force-chip').classList.remove('checked');
+      }
+    });
+  }
+
   function setMode(mode){
     state.mode = mode;
     persistState();
@@ -590,6 +635,7 @@
       b.classList.toggle('active', b.getAttribute('data-mode') === mode);
     });
     renderHatRack();
+    updateForceRegenVisibility();
     applyHatTheme(state.mode === 'single' ? state.activeHat : 'blue');
     renderPromptOutput();
     renderAiOutput();
@@ -905,9 +951,12 @@
       } else {
         var items = state.assembled.sequence;
         // 重新生成時沿用先前已成功、且提示詞內容沒變過的結果（例如主題改了會連帶讓 prompt 對不上而視為過期）——
-        // 只針對「還沒有結果」或「上次失敗」的帽子重打，避免因中途某一頂失敗（例如金鑰錯誤）就把已完成、花過 API 費用的結果全部丟棄重打
+        // 只針對「還沒有結果」「上次失敗」或使用者勾選「強制重新生成」的帽子重打，避免因中途某一頂失敗
+        // （例如金鑰錯誤）就把已完成、花過 API 費用的結果全部丟棄重打
+        var forceSet = getForceRegenSet();
         var prevResults = Array.isArray(state.aiOutput.sequence) ? state.aiOutput.sequence : [];
         var results = items.map(function(it, i){
+          if(forceSet[it.hat]) return null;
           var p = prevResults[i];
           return (p && !p.error && p.prompt === it.text) ? p : null;
         });
@@ -932,6 +981,7 @@
           setProgress(doneCount, items.length);
           renderAiOutput();
         }
+        clearForceRegen(forceSet); // 已處理過的強制重新生成勾選，用完自動取消勾選
         report.innerHTML = '<div class="ok">六頂帽子已全部產生完成</div>';
       }
       persistState();
@@ -1076,6 +1126,8 @@
   renderHatRack();
   $('hatRack').classList.toggle('seq-mode', state.mode === 'sequence');
   $('seqNote').style.display = state.mode === 'sequence' ? 'block' : 'none';
+  renderForceRegenRow();
+  updateForceRegenVisibility();
   renderPromptOutput();
   initAiPanel();
   renderAiOutput();
