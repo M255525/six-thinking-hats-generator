@@ -771,9 +771,17 @@
         report.innerHTML = '<div class="ok">已產生完成</div>';
       } else {
         var items = state.assembled.sequence;
-        var results = [];
+        // 重新生成時沿用先前已成功、且提示詞內容沒變過的結果（例如主題改了會連帶讓 prompt 對不上而視為過期）——
+        // 只針對「還沒有結果」或「上次失敗」的帽子重打，避免因中途某一頂失敗（例如金鑰錯誤）就把已完成、花過 API 費用的結果全部丟棄重打
+        var prevResults = Array.isArray(state.aiOutput.sequence) ? state.aiOutput.sequence : [];
+        var results = items.map(function(it, i){
+          var p = prevResults[i];
+          return (p && !p.error && p.prompt === it.text) ? p : null;
+        });
         state.aiOutput.sequence = results;
+        renderAiOutput();
         for(var i = 0; i < items.length; i++){
+          if(results[i]) continue; // 已有可沿用的成功結果，跳過不重打
           var h = HATS[items[i].hat];
           report.innerHTML = '<div class="ok">產生中（' + (i+1) + '／' + items.length + '）：' + h.label + '…</div>';
           renderAiOutput();
@@ -781,9 +789,9 @@
             var t = await callLLM(provider, model, apiKey, items[i].text, function(attempt, status, waitSec){
               report.innerHTML = '<div class="warn">' + h.label + ' API 回應 ' + status + '，' + waitSec + ' 秒後自動重試（第 ' + attempt + ' 次）…</div>';
             });
-            results.push({hat: items[i].hat, text: t});
+            results[i] = {hat: items[i].hat, text: t, prompt: items[i].text};
           }catch(err){
-            results.push({hat: items[i].hat, error: err.message});
+            results[i] = {hat: items[i].hat, error: err.message, prompt: items[i].text};
           }
           renderAiOutput();
         }
@@ -803,8 +811,11 @@
     if(state.mode === 'single'){
       text = state.aiOutput.single ? state.aiOutput.single.text : '';
     } else if(state.aiOutput.sequence){
-      text = state.aiOutput.sequence.map(function(it){
-        return '【' + HATS[it.hat].label + '】\n' + (it.error ? '（失敗：' + it.error + '）' : it.text);
+      text = state.aiOutput.sequence.map(function(it, i){
+        var hatKey = it ? it.hat : (state.assembled.sequence && state.assembled.sequence[i] && state.assembled.sequence[i].hat);
+        var label = hatKey ? HATS[hatKey].label : '（未知）';
+        var body = !it ? '（尚未產生）' : (it.error ? '（失敗：' + it.error + '）' : it.text);
+        return '【' + label + '】\n' + body;
       }).join('\n\n---\n\n');
     }
     if(!text){ showToast('尚未有 AI 產生結果'); return; }

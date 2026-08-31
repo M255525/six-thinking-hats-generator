@@ -14,6 +14,7 @@
 - **兩種模式**（`state.mode`）：`single`（選一頂帽子產生一份分析）／`sequence`（固定依「白,紅,黑,黃,綠,藍」六帽依序各產生一份，這個順序直接取自使用者原始範本裡 `{{思考帽||白,紅,黑,黃,綠,藍}}` 的列舉順序，不可任意調換）。`HAT_ORDER` 陣列是唯一真實來源，新增/調整帽子時只改這裡即可。
 - `template(hatChar, topic)`：組成提示詞的唯一函式，`hatChar` 是單一色字（如「白」），輸出字串裡是 `六頂思考帽中${hatChar}帽的觀點`——修改文字時注意「帽」字是模板自己補的，不要把它塞進 `HATS[key].name`。
 - **核心互動模型**（與 `ai-prompt-generator` 同一套設計哲學）：「🖊 組成提示詞」純前端字串組裝，不需金鑰；「🚀 送給 AI 生成分析」選用功能，串接使用者自己的 BYOK LLM。單一模式呼叫一次；依序模式**逐一 await**六次呼叫並即時更新每頂帽子的卡片狀態（不會平行發送六個請求，也不會因某一頂失敗就中斷其餘五頂——失敗的那頂卡片顯示錯誤訊息，其餘照常）。
+- **依序模式重試會續跑、不會全部重打**：每筆結果（成功或失敗）都多存一個 `prompt` 欄位，記錄它是用哪一段組成後的提示詞文字生成的。再次按「送給 AI 生成分析」時，會先比對 `state.aiOutput.sequence[i].prompt` 是否等於這次的 `items[i].text`——相等且沒有 `error` 就直接沿用、不重打；否則（含尚未生成過、上次失敗、或主題已改導致 prompt 對不上）才呼叫 API。這是為了避免使用者因某一頂失敗（例如金鑰打錯）重試時，把前面幾頂已成功、花過 API 費用的結果一起丟棄重打。已用 Playwright + mock `fetch` 驗證：中途失敗後重試只會呼叫未完成的那幾頂；改了問題主題後重試則會視全部結果過期、六頂都重新呼叫。
 - `parseMarkdownTable()`：把 AI 回覆中的 GitHub 風格 markdown 表格轉成真正的 `<table>`（`.hat-table`）；抓不到表格格式（例如 AI 沒有照格式回覆）就回傳 `null`，外層退回原始文字的 `pre-wrap` 顯示，不會拋錯或空白。
 - **BYOK AI 串接**：與 `ai-prompt-generator`／`Prompt/`／`sbir-generator/sbir-gen-s` 同一套模式——瀏覽器直連 `fetch()`，Claude 需 `anthropic-dangerous-direct-browser-access` header，Gemini 金鑰放 `x-goog-api-key`，OpenAI/OpenRouter 用 Bearer；429/500/503/529 自動重試最多 2 次。設定存 `localStorage`（key: `sixHatsApiConfig`）。
 - 狀態存 `localStorage`：`sixHatsState`（topic/mode/activeHat/assembled/aiOutput）、`sixHatsSavedItems`（已儲存清單）、`sixHatsMarquee`（跑馬燈快取）。
