@@ -31,7 +31,8 @@
 
 - **浮水印**：`#printWatermark`／`#wmImg` 這段（含內嵌 base64 圖檔）是用 Python 腳本直接從 `mandala-thinking/index.html` 逐行搬過來的（找到該行寫入目標檔案，全程沒有經過對話視窗顯示內容，避免大體積 base64 佔用 context），跟 `IPA_Kano`／`restaurant-feasibility-calculator`／`mandala-thinking` 用同一張已去背 PNG（480×297，「馬克老師 AI・工具・學習・成長」）。平常 `display:none`，只在 `@media print` 用 `position:fixed`+`opacity:.11` 顯示，每一頁列印都會重複出現。
 - **列印範圍**：只印「③ 送給 AI 生成分析」的結果——`#topicPanel`／`#promptPanel`／`#savedPanel`／跑馬燈／頂欄／按鈕群一律在 `@media print` 隱藏；改用 `#printHeader`（列印時才 `display:block`）在最上方補上「問題主題／模式／產出時間」這行 context，因為問題主題欄位本身被隱藏了。六頂依序模式的 `.hat-card` 是 `<details>`，收合狀態列印會是空的，`printAiBtn` 點擊時會先把全部 `.hat-card` 的 `open` 設成 `true` 再呼叫 `window.print()`。
-- **Markdown 符號清理**：`template()` 新增第 5 條規則，明確要求 AI 說明文字不要用 `#`／`*`，只有表格本身保留標準 Markdown 表格語法（因為 `parseMarkdownTable()` 靠它解析）。這只是「要求」，AI 不一定完全遵守，所以另外加了防呆：`stripBold()`（去掉 `**粗體**` 星號只留文字）用在表格的表頭／儲存格與 fallback 純文字；`stripMarkdownNoise()`（額外去標題井字號、條列符號改成「・」）只用在表格以外的自由文字（`parseMarkdownTable()` 的 before-text 與整段解析失敗時的 fallback），不會誤傷表格分隔列（`|---|---|`）本身，因為那一段在解析階段就已經被抽走。已用 mock `fetch`（內容故意夾帶 `#`／`**`／`*`）端對端驗證清理邏輯正確、且不影響表格解析。
+- **Markdown 符號清理**：`template()` 第 5 條規則，明確要求 AI 說明文字不要用 `#`／`*`，只有表格本身保留標準 Markdown 表格語法（因為 `parseMarkdownTable()` 靠它解析）。這只是「要求」，AI 不一定完全遵守，所以另外加了防呆：`stripBold()`（去掉 `**粗體**` 星號只留文字）用在表格的表頭／儲存格與 fallback 純文字；`stripMarkdownNoise()`（額外去標題井字號、條列符號改成「・」）只用在表格以外的自由文字（`parseMarkdownTable()` 的 before-text 與整段解析失敗時的 fallback），不會誤傷表格分隔列（`|---|---|`）本身，因為那一段在解析階段就已經被抽走。已用 mock `fetch`（內容故意夾帶 `#`／`**`／`*`）端對端驗證清理邏輯正確、且不影響表格解析。
+- **講人話**（2026-08-31，套用 `humanizer-zh-tw` skill 的原則）：`template()` 新增第 6 條規則，要求 AI 用口語化、直接講重點的方式寫，明確列出幾個常見 AI 陳腔濫調（「至關重要」「顯著提升」「扮演關鍵角色」「不僅是…更是…」）請它別用，也別為了湊格式硬把內容分成三點。這一條只在**提示詞層級**要求 AI 自己寫得像人話，沒有另外做程式碼防呆（不像 `#`／`*` 那條還有 `stripMarkdownNoise()` 兜底）——因為「像不像人話」是語意判斷，沒辦法用正則表達式可靠地偵測或修正，勉強做只會誤傷正常內容，這件事只能倚賴提示詞本身把關。
 
 ## 部署
 
