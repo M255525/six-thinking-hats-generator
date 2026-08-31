@@ -146,6 +146,10 @@
   .api-grid label{grid-column:span 1;font-size:12px;color:var(--ink-faint);display:block;}
   .api-grid label.full{grid-column:1 / -1;}
   .api-note{font-size:11.5px;color:var(--ink-faint);margin-top:8px;line-height:1.6;}
+  .progress-wrap{margin-top:14px;}
+  .progress-track{height:8px;border-radius:999px;background:var(--panel-raised);border:1px solid var(--line);overflow:hidden;}
+  .progress-fill{height:100%;width:0%;background:var(--accent);border-radius:999px;transition:width .35s ease;}
+  .progress-label{margin-top:6px;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-faint);display:flex;justify-content:space-between;gap:8px;}
   .ai-report{margin-top:10px;font-size:12.5px;min-height:1.4em;}
   .ai-report .ok{color:var(--accent-ink);}
   .ai-report .warn{color:#92400e;}
@@ -256,6 +260,10 @@
     <div class="output-actions">
       <button class="btn primary" id="aiGenerateBtn" type="button">🚀 送給 AI 生成分析</button>
       <button class="btn ghost" id="copyAiBtn" type="button">複製 AI 結果</button>
+    </div>
+    <div class="progress-wrap" id="aiProgressWrap" style="display:none;">
+      <div class="progress-track"><div class="progress-fill" id="aiProgressFill"></div></div>
+      <div class="progress-label" id="aiProgressLabel" aria-live="polite"></div>
     </div>
     <div id="aiReport" class="ai-report" aria-live="polite"></div>
     <div id="aiOutputArea"></div>
@@ -742,6 +750,13 @@
     }
   }
 
+  function setProgress(done, total){
+    $('aiProgressWrap').style.display = 'block';
+    var pct = total ? Math.round(done / total * 100) : 0;
+    $('aiProgressFill').style.width = pct + '%';
+    $('aiProgressLabel').innerHTML = '<span>' + done + ' ／ ' + total + ' 完成</span><span>' + pct + '%</span>';
+  }
+
   $('aiGenerateBtn').addEventListener('click', async function(){
     var provider = $('aiProvider').value;
     var model = $('aiModel').value.trim();
@@ -763,11 +778,13 @@
     try{
       if(state.mode === 'single'){
         var hat = state.assembled.single.hat;
+        setProgress(0, 1);
         report.innerHTML = '<div class="ok">呼叫 ' + AI_PROVIDERS[provider].label + '（' + escapeHtml(model) + '）中，請稍候…</div>';
         var text = await callLLM(provider, model, apiKey, state.assembled.single.text, function(attempt, status, waitSec){
           report.innerHTML = '<div class="warn">API 回應 ' + status + '（服務商暫時過載／限流），' + waitSec + ' 秒後自動重試（第 ' + attempt + ' 次）…</div>';
         });
         state.aiOutput.single = {hat: hat, text: text};
+        setProgress(1, 1);
         report.innerHTML = '<div class="ok">已產生完成</div>';
       } else {
         var items = state.assembled.sequence;
@@ -780,6 +797,8 @@
         });
         state.aiOutput.sequence = results;
         renderAiOutput();
+        var doneCount = results.filter(function(r){ return !!r; }).length;
+        setProgress(doneCount, items.length);
         for(var i = 0; i < items.length; i++){
           if(results[i]) continue; // 已有可沿用的成功結果，跳過不重打
           var h = HATS[items[i].hat];
@@ -793,6 +812,8 @@
           }catch(err){
             results[i] = {hat: items[i].hat, error: err.message, prompt: items[i].text};
           }
+          doneCount++;
+          setProgress(doneCount, items.length);
           renderAiOutput();
         }
         report.innerHTML = '<div class="ok">六頂帽子已全部產生完成</div>';
