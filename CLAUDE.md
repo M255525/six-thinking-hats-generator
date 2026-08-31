@@ -18,10 +18,14 @@
 - **BYOK AI 串接**：與 `ai-prompt-generator`／`Prompt/`／`sbir-generator/sbir-gen-s` 同一套模式——瀏覽器直連 `fetch()`，Claude 需 `anthropic-dangerous-direct-browser-access` header，Gemini 金鑰放 `x-goog-api-key`，OpenAI/OpenRouter 用 Bearer；429/500/503/529 自動重試最多 2 次。設定存 `localStorage`（key: `sixHatsApiConfig`）。
 - 狀態存 `localStorage`：`sixHatsState`（topic/mode/activeHat/assembled/aiOutput）、`sixHatsSavedItems`（已儲存清單）、`sixHatsMarquee`（跑馬燈快取）。
 
+## 部署
+
+已推公開 GitHub repo `M255525/six-thinking-hats-generator`，用 `.github/workflows/deploy-pages.yml`（逐字複製 `mandala-thinking` 的版本）以 Actions workflow 部署 GitHub Pages（非 legacy branch-source；`gh api -X POST repos/.../pages -f build_type=workflow` 建立 Pages 站台後，`gh workflow run` 觸發第一次部署），已上線：<https://m255525.github.io/six-thinking-hats-generator/>（手冊：<https://m255525.github.io/six-thinking-hats-generator/manual.html>）。
+
 ## 本次刻意不做（範圍依使用者實際請求，未主動擴增）
 
 - **無序號授權**：使用者僅要求跑馬燈／使用警語／創作者資訊／使用手冊，未提及序號授權或鎖定，比照 `coffee-ig-planner`／`mandala-thinking`／`social-post-grader` 無授權的先例，不主動加鎖。
-- **無 PWA／無桌面版 exe／未部署 GitHub Pages**：未被要求，且會引入 manifest/service-worker/打包等額外維護面。若日後要加，PWA 做法可直接比照 `ai-prompt-generator` 的 5 個判斷式（iOS／macOS Safari 相容性）整段複用。
+- **無 PWA／無桌面版 exe**：未被要求，且會引入 manifest/service-worker/打包等額外維護面。若日後要加，PWA 做法可直接比照 `ai-prompt-generator` 的 5 個判斷式（iOS／macOS Safari 相容性）整段複用。
 - **無 Google Sheet 後端**：跑馬燈是唯一對外呼叫，沿用工作區既有共用授權伺服器（與 `Prompt/`／`ai-video-studio` 系列同一個 Google Sheet），除此之外零後端。
 
 ## 頂部共用跑馬燈
@@ -49,5 +53,5 @@ node --check _check.js
 
 ## 本次未做（後續視需要再處理）
 
-- git 初始化（比照工作區慣例每個子資料夾各自是獨立 git 儲存庫）尚未執行，需使用者確認後再做
-- 根目錄 `專案目錄.docx` 尚待補上本專案的列
+- 桌面版 exe 打包
+- 序號授權（使用者本次未要求；若之後要鎖工具，比照 `ai-prompt-generator` 的「鎖整個工具 12 個月」模式加回）
