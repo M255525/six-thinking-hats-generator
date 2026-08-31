@@ -20,6 +20,18 @@
 - **BYOK AI 串接**：與 `ai-prompt-generator`／`Prompt/`／`sbir-generator/sbir-gen-s` 同一套模式——瀏覽器直連 `fetch()`，Claude 需 `anthropic-dangerous-direct-browser-access` header，Gemini 金鑰放 `x-goog-api-key`，OpenAI/OpenRouter 用 Bearer；429/500/503/529 自動重試最多 2 次。設定存 `localStorage`（key: `sixHatsApiConfig`）。
 - 狀態存 `localStorage`：`sixHatsState`（topic/mode/activeHat/assembled/aiOutput）、`sixHatsSavedItems`（已儲存清單）、`sixHatsMarquee`（跑馬燈快取）。
 
+## PWA 加入主畫面 ＋ 手機適用
+
+`manifest.json`／`service-worker.js`／`icons/`／`#installBtn` 安裝 IIFE 逐字比照 `ai-prompt-generator` 已修過多輪 bug 的版本（見該專案 CLAUDE.md 的「PWA 加入主畫面」「iOS／iPadOS／macOS 相容性補強」「回饋機制與快取踩坑修正」三段）：network-first + 同源快取備援（不追求離線可用，`{cache:'reload'}` 繞過 HTTP 快取）；安裝腳本是獨立 IIFE，`notify()` 自己操作 `#toast` DOM，不依賴主程式 `showToast`（跨 IIFE 看不到會是 `undefined`）；iOS／macOS Safari 的 5 個判斷式（`isIOSDevice`/`isMacDesktop`/`isSafariEngine`/`isStandalone`/`fallbackMessage()`）原樣複用。圖示（`icons/`）是這次現畫的：藍底（`#2563eb`，對應 `--accent` 藍帽色）＋白色帽子剪影（跟 `index.html` 的 `hatSvg()` 同一個造型：橢圓帽簷＋圓頂帽冠），一次性產生腳本（`gen_icons.py`）用完即刪、未進版控。已用 Playwright 實測：192px 寬視窗下水平零溢出、320px 更窄視窗也零溢出，按鈕與帽架皆正常換行；`beforeinstallprompt` 有被 Chromium 偵測到（安裝按鈕走原生流程而非 fallback 分支，跟 `ai-prompt-generator` 當初的實測結果一致）。
+
+沒有另外加 `@media (max-width:480px)` 之類更細的斷點——原本 `.hero`/`.type` 用 `clamp()`、`flex-wrap` 已經涵蓋大多數手機寬度，只在既有的 `@media (max-width:600px)` 基礎上微調就足夠通過測試，沒有為此新增大量手機專屬 CSS。
+
+## 匯出 PDF（含浮水印）＋ 內容去 Markdown 符號
+
+- **浮水印**：`#printWatermark`／`#wmImg` 這段（含內嵌 base64 圖檔）是用 Python 腳本直接從 `mandala-thinking/index.html` 逐行搬過來的（找到該行寫入目標檔案，全程沒有經過對話視窗顯示內容，避免大體積 base64 佔用 context），跟 `IPA_Kano`／`restaurant-feasibility-calculator`／`mandala-thinking` 用同一張已去背 PNG（480×297，「馬克老師 AI・工具・學習・成長」）。平常 `display:none`，只在 `@media print` 用 `position:fixed`+`opacity:.11` 顯示，每一頁列印都會重複出現。
+- **列印範圍**：只印「③ 送給 AI 生成分析」的結果——`#topicPanel`／`#promptPanel`／`#savedPanel`／跑馬燈／頂欄／按鈕群一律在 `@media print` 隱藏；改用 `#printHeader`（列印時才 `display:block`）在最上方補上「問題主題／模式／產出時間」這行 context，因為問題主題欄位本身被隱藏了。六頂依序模式的 `.hat-card` 是 `<details>`，收合狀態列印會是空的，`printAiBtn` 點擊時會先把全部 `.hat-card` 的 `open` 設成 `true` 再呼叫 `window.print()`。
+- **Markdown 符號清理**：`template()` 新增第 5 條規則，明確要求 AI 說明文字不要用 `#`／`*`，只有表格本身保留標準 Markdown 表格語法（因為 `parseMarkdownTable()` 靠它解析）。這只是「要求」，AI 不一定完全遵守，所以另外加了防呆：`stripBold()`（去掉 `**粗體**` 星號只留文字）用在表格的表頭／儲存格與 fallback 純文字；`stripMarkdownNoise()`（額外去標題井字號、條列符號改成「・」）只用在表格以外的自由文字（`parseMarkdownTable()` 的 before-text 與整段解析失敗時的 fallback），不會誤傷表格分隔列（`|---|---|`）本身，因為那一段在解析階段就已經被抽走。已用 mock `fetch`（內容故意夾帶 `#`／`**`／`*`）端對端驗證清理邏輯正確、且不影響表格解析。
+
 ## 部署
 
 已推公開 GitHub repo `M255525/six-thinking-hats-generator`，用 `.github/workflows/deploy-pages.yml`（逐字複製 `mandala-thinking` 的版本）以 Actions workflow 部署 GitHub Pages（非 legacy branch-source；`gh api -X POST repos/.../pages -f build_type=workflow` 建立 Pages 站台後，`gh workflow run` 觸發第一次部署），已上線：<https://m255525.github.io/six-thinking-hats-generator/>（手冊：<https://m255525.github.io/six-thinking-hats-generator/manual.html>）。
@@ -27,7 +39,7 @@
 ## 本次刻意不做（範圍依使用者實際請求，未主動擴增）
 
 - **無序號授權**：使用者僅要求跑馬燈／使用警語／創作者資訊／使用手冊，未提及序號授權或鎖定，比照 `coffee-ig-planner`／`mandala-thinking`／`social-post-grader` 無授權的先例，不主動加鎖。
-- **無 PWA／無桌面版 exe**：未被要求，且會引入 manifest/service-worker/打包等額外維護面。若日後要加，PWA 做法可直接比照 `ai-prompt-generator` 的 5 個判斷式（iOS／macOS Safari 相容性）整段複用。
+- **無桌面版 exe**：未被要求，會引入打包/維護額外面（PWA 已於後續回合依使用者要求補上，見下）。
 - **無 Google Sheet 後端**：跑馬燈是唯一對外呼叫，沿用工作區既有共用授權伺服器（與 `Prompt/`／`ai-video-studio` 系列同一個 Google Sheet），除此之外零後端。
 
 ## 頂部共用跑馬燈

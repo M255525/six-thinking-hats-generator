@@ -27,6 +27,8 @@
 - **內建範例**：5 組虛構情境（調漲售價、導入 AI 客服、全面遠距辦公等），一鍵套用快速上手
 - **BYOK**：支援 Claude／OpenAI／Gemini／OpenRouter 四選一，API 金鑰只存在瀏覽器 localStorage，不經過任何後端伺服器
 - **已儲存的分析**：可將主題與產出（連同 AI 產生結果）存成有名字的紀錄，之後載入、下載 .txt 或刪除
+- **匯出 PDF**：AI 分析結果可直接列印／存成 PDF，內容適合直接閱讀（不會出現 `#`／`*` 等 Markdown 符號），並附浮水印
+- **加入主畫面**：支援 PWA 安裝，手機與電腦瀏覽器皆可加入主畫面當作 App 開啟，介面已針對手機畫面優化
 
 ## 怎麼用
 
@@ -74,9 +76,12 @@ python -m http.server 8804
 ## 檔案結構
 
 ```
-index.html    主程式（跑馬燈 + 帽架 + 問題主題 + 提示詞組裝 + AI 生成 + 儲存清單）
-manual.html   操作手冊
-CLAUDE.md     開發筆記／架構決策紀錄
+index.html         主程式（跑馬燈 + 帽架 + 問題主題 + 提示詞組裝 + AI 生成 + 儲存清單 + 匯出 PDF + PWA）
+manual.html         操作手冊
+manifest.json        PWA 安裝設定
+service-worker.js    PWA 離線快取（network-first）
+icons/               PWA 圖示
+CLAUDE.md            開發筆記／架構決策紀錄
 ```
 
 ## 隱私與資料
